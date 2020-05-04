@@ -15,7 +15,7 @@ ENV TERM linux
 ARG AIRFLOW_VERSION=1.10.9
 ARG AIRFLOW_USER_HOME=/usr/local/airflow
 ARG AIRFLOW_DEPS=""
-ARG PYTHON_DEPS=""
+ARG PYTHON_DEPS="pandas~=0.25.3 plotly~=4.6.0 matplotlib~=3.2.1 pyodbc~=4.0.27 bcrypt==3.1.7 pyshacl==0.11.5 python-dateutil==2.8.1 rdflib==4.2.2"
 ENV AIRFLOW_HOME=${AIRFLOW_USER_HOME}
 
 # Define en_US.
@@ -72,6 +72,15 @@ RUN set -ex \
         /usr/share/man \
         /usr/share/doc \
         /usr/share/doc-base
+        
+# installing msodbcsql driver: https://superuser.com/questions/1355732/installing-microsoft-odbc-driver-to-debian        
+RUN apt-get update \
+        && apt-get install -y curl apt-transport-https gnupg2 \
+        && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+        && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+        && apt-get update \
+        && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
+        
 
 COPY script/entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
