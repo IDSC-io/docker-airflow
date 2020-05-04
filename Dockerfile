@@ -3,6 +3,7 @@
 # DESCRIPTION: Basic Airflow container
 # BUILD: docker build --rm -t puckel/docker-airflow .
 # SOURCE: https://github.com/puckel/docker-airflow
+# NOTE: Run with docker build --build-arg http_proxy=http://username:password@proxy-prod.insel.ch:8080 --build-arg https_proxy=http://username:password@proxy-prod.insel.ch:8080 --tag puckl-build-20200404 .
 
 FROM python:3.7-slim-buster
 LABEL maintainer="Puckel_"
@@ -12,7 +13,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TERM linux
 
 # Airflow
-ARG AIRFLOW_VERSION=1.10.9
+ARG AIRFLOW_VERSION=1.10.10
 ARG AIRFLOW_USER_HOME=/usr/local/airflow
 ARG AIRFLOW_DEPS=""
 ARG PYTHON_DEPS="pandas~=0.25.3 plotly~=4.6.0 matplotlib~=3.2.1 pyodbc~=4.0.27 bcrypt==3.1.7 pyshacl==0.11.5 python-dateutil==2.8.1 rdflib==4.2.2"
@@ -50,6 +51,8 @@ RUN set -ex \
         rsync \
         netcat \
         locales \
+        gcc \
+        unixodbc-dev \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
@@ -74,11 +77,11 @@ RUN set -ex \
         /usr/share/doc-base
         
 # installing msodbcsql driver: https://superuser.com/questions/1355732/installing-microsoft-odbc-driver-to-debian        
-RUN apt-get update \
-        && apt-get install -y curl apt-transport-https gnupg2 \
-        && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-        && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-        && apt-get update \
+RUN apt-get update -yqq && apt-get install -y curl apt-transport-https gpg
+
+RUN curl http://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+        && curl http://packages.microsoft.com/config/debian/9/prod.list >> /etc/apt/sources.list \
+        && apt-get update && apt-get update \
         && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
         
 
